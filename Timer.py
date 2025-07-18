@@ -2,7 +2,8 @@ import json
 
 from PyQt5 import uic, QtCore, QtMultimedia, Qt
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction
 import sys
 import time
 
@@ -28,7 +29,7 @@ class Timer(QMainWindow):
 				self.al_timer = QTimer()
 				self.al_timer.start(10)
 				self.al_timer.timeout.connect(self.app_limit)
-				
+		
 		self.rest_time = self.learn_time * 60
 		self.tone = QtMultimedia.QSound(rf'{path}/data/{config["tone"]}')
 		self.set_font_size()
@@ -53,7 +54,13 @@ class Timer(QMainWindow):
 		self.showFullScreen()
 		
 		self.pause = False
-	
+		# 创建系统托盘图标
+		self.createTrayIcon(rf'{path}/data/clock.png')
+		
+		# # 设置窗口属性 - 隐藏任务栏图标
+		self.setWindowFlags(self.windowFlags() | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowMinimizeButtonHint)
+
+
 	def set_time(self):
 		if self.first_show:
 			self.first_show = False
@@ -77,10 +84,10 @@ class Timer(QMainWindow):
 		browser_height = self.timeBrowser.size().height()
 		self.set_font_size()
 		self.timeBrowser.setText(f'''
-					<div align="center" style="font-size: {self.font_size}px; height: {browser_height}px; line-height: {browser_height - self.font_size // 2}px">
-						{current_time}
-					</div>
-					''')
+						<div align="center" style="font-size: {self.font_size}px; height: {browser_height}px; line-height: {browser_height - self.font_size // 2}px">
+							{current_time}
+						</div>
+						''')
 	
 	def set_button_view_invisible(self):
 		self.timerSwitch.setText('')
@@ -155,4 +162,42 @@ class Timer(QMainWindow):
 	def app_limit(self):
 		processes = get_processes()
 		return [limit_processes(processes, a)
-		        for a in self.apps if not if_in_rest(get_time(), self.rest_time)]
+		        for a in self.apps if not if_in_rest(get_time(), self.rest_period)]
+	
+	def createTrayIcon(self,path):
+		# 创建系统托盘图标
+		self.trayIcon = QSystemTrayIcon(self)
+		self.trayIcon.setIcon(QIcon(path))  # 替换为你的图标路径
+		
+		# 创建托盘菜单
+		trayMenu = QMenu()
+		
+		# 添加菜单项
+		showAction = QAction("显示", self)
+		showAction.triggered.connect(self.showNormal)
+		trayMenu.addAction(showAction)
+		
+		exitAction = QAction("退出", self)
+		exitAction.triggered.connect(self.closeApp)
+		trayMenu.addAction(exitAction)
+		
+		self.trayIcon.setContextMenu(trayMenu)
+		self.trayIcon.show()
+		
+		# 托盘图标点击事件
+		self.trayIcon.activated.connect(self.onTrayIconActivated)
+	
+	def onTrayIconActivated(self, reason):
+		# 双击托盘图标显示窗口
+		if reason == QSystemTrayIcon.DoubleClick:
+			self.showFullScreen()
+	
+	def closeApp(self):
+		self.trayIcon.hide()
+		QApplication.quit()
+	
+	def closeEvent(self, event):
+		# 重写关闭事件，使其最小化到托盘而不是退出
+		if self.trayIcon.isVisible():
+			self.hide()
+			event.ignore()
