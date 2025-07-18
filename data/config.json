@@ -1,0 +1,8 @@
+{
+  "learn_time": 50,
+  "break_time": 10,
+  "tone": "8730.wav",
+  "appLimiter_if_open": true,
+  "rest_periods": [["1130", "1230"], ["2200", "2400"]],
+  "apps": ["HYP.exe", "delta_force_launcher.exe"]
+}
