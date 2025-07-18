@@ -18,6 +18,6 @@
 ## 打包方法
 使用```pyinstaller```生成文件夹式的无终端窗口应用
 ```
-pyinstaller --onedir --use-admin --windowed --noconfirm --add-data="data/*;data" --add-data="ui/*;ui" --clean main.py
+pyinstaller --onedir --uac-admin --windowed --noconfirm --add-data="data/*;data" --add-data="ui/*;ui" --clean main.py
 ```
 配置设置方法同上文所述 文件在```dist/_internal```文件夹内 软件为```dist/main.exe```
