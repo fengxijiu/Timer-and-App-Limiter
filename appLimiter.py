@@ -28,8 +28,12 @@ def get_processes():
 
 def limit_processes(processes, app):
 	if app in processes.keys():
+		# print(app,processes[app])
 		for pid in processes[app]:
-			psutil.Process(pid).kill()
+			try:
+				psutil.Process(pid).kill()
+			except:
+				pass
 		return True
 	return False
 
@@ -48,4 +52,10 @@ def find_app():
 	print(str(res))
 
 if __name__ == '__main__':
-	find_app()
+	try:
+		while True:
+			time = get_time()
+			limit_processes(get_processes(), "HYP.exe")
+	except Exception as e:
+		print('***************')
+		print(e)

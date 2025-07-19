@@ -18,20 +18,13 @@ class Timer(QMainWindow):
 		self.font_size = None
 		self.first_show = True
 		self.timer_flag = 'clock'
-		with open(rf'{path}/data/config.json', 'r') as f:
-			config = json.load(f)
-			self.learn_time = config['learn_time']
-			self.break_time = config['break_time']
-			
-			if config['appLimiter_if_open']:
-				self.apps = config['apps']
-				self.rest_period = config['rest_periods']
-				self.al_timer = QTimer()
-				self.al_timer.start(10)
-				self.al_timer.timeout.connect(self.app_limit)
+		self.path = path
+		
+		self.learn_time, self.break_time, self.apps, self.rest_period, self.tone = 0, 0, [], [], None
+		
+		self.config_update()
 		
 		self.rest_time = self.learn_time * 60
-		self.tone = QtMultimedia.QSound(rf'{path}/data/{config["tone"]}')
 		self.set_font_size()
 		self.timerSwitch.clicked.connect(self.timer_switch)
 		self.timerSwitch.setText('stopwatch')
@@ -59,8 +52,7 @@ class Timer(QMainWindow):
 		
 		# # 设置窗口属性 - 隐藏任务栏图标
 		self.setWindowFlags(self.windowFlags() | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowMinimizeButtonHint)
-
-
+	
 	def set_time(self):
 		if self.first_show:
 			self.first_show = False
@@ -108,7 +100,8 @@ class Timer(QMainWindow):
 		if self.timer_flag == 'clock':
 			self.timer_flag = 'stopwatch'
 			self.timerSwitch.setText('clock')
-			self.playSwitch.setText('PAUSE')
+			self.pause = True
+			self.playSwitch.setText('PLAY')
 		else:
 			self.timer_flag = 'clock'
 			self.rest_time = self.learn_time * 60
@@ -140,10 +133,10 @@ class Timer(QMainWindow):
 	
 	def reset_button_view_timer(self):
 		if self.timer_flag == 'clock':
-			self.timerSwitch.setText('clock')
+			self.timerSwitch.setText('stopwatch')
 		else:
 			self.timerSwitch.setText('stopwatch')
-			self.playSwitch.setText('pause' if self.pause else 'play')
+			self.playSwitch.setText('PLAY' if self.pause else 'PAUSE')
 		self.music.setText('music')
 		
 		self.idle_timer.stop()
@@ -164,7 +157,7 @@ class Timer(QMainWindow):
 		return [limit_processes(processes, a)
 		        for a in self.apps if not if_in_rest(get_time(), self.rest_period)]
 	
-	def createTrayIcon(self,path):
+	def createTrayIcon(self, path):
 		# 创建系统托盘图标
 		self.trayIcon = QSystemTrayIcon(self)
 		self.trayIcon.setIcon(QIcon(path))  # 替换为你的图标路径
@@ -201,3 +194,18 @@ class Timer(QMainWindow):
 		if self.trayIcon.isVisible():
 			self.hide()
 			event.ignore()
+	
+	def config_update(self):
+		with open(rf'{self.path}/data/config.json', 'r') as f:
+			config = json.load(f)
+			self.learn_time = config['learn_time']
+			self.break_time = config['break_time']
+			self.tone = QtMultimedia.QSound(rf'{self.path}/data/{config["tone"]}')
+			
+			if config['appLimiter_if_open']:
+				self.apps = config['apps']
+				self.rest_period = config['rest_periods']
+				self.al_timer = QTimer()
+				self.al_timer.start(10)
+				self.al_timer.timeout.connect(self.app_limit)
+			f.close()
